@@ -117,8 +117,8 @@ pub use self::sty::{
 };
 pub use self::trait_def::TraitDef;
 pub use self::typeck_results::{
-    CanonicalUserType, CanonicalUserTypeAnnotation, CanonicalUserTypeAnnotations, IsIdentity,
-    TypeckResults, UserType, UserTypeAnnotationIndex,
+    CanonicalUserType, CanonicalUserTypeAnnotation, CanonicalUserTypeAnnotations, DefaultField,
+    IsIdentity, TypeckResults, UserType, UserTypeAnnotationIndex,
 };
 
 pub mod abstract_const;

@@ -161,6 +161,8 @@ pub struct AdtExpr<'tcx> {
     pub fields: Box<[FieldExpr]>,
     /// The base, e.g. `Foo {x: 1, .. base}`.
     pub base: Option<FruInfo<'tcx>>,
+    /// Default fields.
+    pub default: Option<Box<[FieldDefault<'tcx>]>>,
 }
 
 #[derive(Clone, Debug, HashStable)]
@@ -525,6 +527,12 @@ pub struct FieldExpr {
 pub struct FruInfo<'tcx> {
     pub base: ExprId,
     pub field_types: Box<[Ty<'tcx>]>,
+}
+
+#[derive(Clone, Debug, HashStable)]
+pub struct FieldDefault<'tcx> {
+    pub name: FieldIdx,
+    pub value: mir::Const<'tcx>,
 }
 
 /// A `match` arm.

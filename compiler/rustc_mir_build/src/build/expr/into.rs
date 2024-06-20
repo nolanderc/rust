@@ -310,6 +310,7 @@ impl<'a, 'tcx> Builder<'a, 'tcx> {
                 ref user_ty,
                 ref fields,
                 ref base,
+                ref default,
             }) => {
                 // See the notes for `ExprKind::Array` in `as_rvalue` and for
                 // `ExprKind::Borrow` above.
@@ -356,7 +357,21 @@ impl<'a, 'tcx> Builder<'a, 'tcx> {
                         })
                         .collect()
                 } else {
-                    field_names.filter_map(|n| fields_map.get(&n).cloned()).collect()
+                    let mut default_fields = default.as_deref().unwrap_or(&[]).iter();
+                    field_names
+                        .filter_map(|n| match fields_map.get(&n) {
+                            Some(v) => Some(v.clone()),
+                            None => {
+                                let default = default_fields.next()?;
+                                assert_eq!(default.name, n);
+                                Some(Operand::Constant(Box::new(ConstOperand {
+                                    span: expr.span,
+                                    user_ty: None,
+                                    const_: default.value,
+                                })))
+                            }
+                        })
+                        .collect()
                 };
 
                 let inferred_ty = expr.ty;

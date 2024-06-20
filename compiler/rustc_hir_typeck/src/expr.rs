@@ -42,6 +42,7 @@ use rustc_infer::traits::query::NoSolution;
 use rustc_infer::traits::ObligationCause;
 use rustc_middle::ty::adjustment::{Adjust, Adjustment, AllowTwoPhase};
 use rustc_middle::ty::error::{ExpectedFound, TypeError};
+use rustc_middle::ty::DefaultField;
 use rustc_middle::ty::GenericArgsRef;
 use rustc_middle::ty::{self, AdtKind, Ty, TypeVisitableExt};
 use rustc_middle::{bug, span_bug};
@@ -1884,13 +1885,21 @@ impl<'a, 'tcx> FnCtxt<'a, 'tcx> {
             self.typeck_results.borrow_mut().fru_field_types_mut().insert(expr.hir_id, fru_tys);
         } else if adt_kind != AdtKind::Union && !remaining_fields.is_empty() {
             // Initialize fields with default values
+            let mut default_fields = Vec::with_capacity(remaining_fields.len());
             for field in variant.fields.iter() {
-                if field.default.is_some() {
+                if let Some(value) = field.default {
                     let ident = field.ident(tcx).normalize_to_macros_2_0();
-                    remaining_fields.remove(&ident);
-                    // TODO(nolanderc): record which field indices need default initialization
+                    if let Some((name, _)) = remaining_fields.remove(&ident) {
+                        let ty = self.field_ty(expr.span, field, args);
+                        default_fields.push(DefaultField { name, ty, value });
+                    }
                 }
             }
+            self.typeck_results
+                .borrow_mut()
+                .default_fields_mut()
+                .insert(expr.hir_id, default_fields);
+            self.typeck_results.borrow().default_fields();
 
             if !remaining_fields.is_empty() {
                 debug!(?remaining_fields);

@@ -148,6 +148,10 @@ pub struct TypeckResults<'tcx> {
     /// MIR construction and hence is not serialized to metadata.
     fru_field_types: ItemLocalMap<Vec<Ty<'tcx>>>,
 
+    /// For each struct initializer, the set of fields which are initiaized
+    /// with their default values.
+    default_fields: ItemLocalMap<Vec<DefaultField<'tcx>>>,
+
     /// For every coercion cast we add the HIR node ID of the cast
     /// expression to this set.
     coercion_casts: ItemLocalSet,
@@ -238,6 +242,7 @@ impl<'tcx> TypeckResults<'tcx> {
             closure_kind_origins: Default::default(),
             liberated_fn_sigs: Default::default(),
             fru_field_types: Default::default(),
+            default_fields: Default::default(),
             coercion_casts: Default::default(),
             used_trait_imports: Default::default(),
             tainted_by_errors: None,
@@ -523,6 +528,14 @@ impl<'tcx> TypeckResults<'tcx> {
         LocalTableInContextMut { hir_owner: self.hir_owner, data: &mut self.fru_field_types }
     }
 
+    pub fn default_fields(&self) -> LocalTableInContext<'_, Vec<DefaultField<'tcx>>> {
+        LocalTableInContext { hir_owner: self.hir_owner, data: &self.default_fields }
+    }
+
+    pub fn default_fields_mut(&mut self) -> LocalTableInContextMut<'_, Vec<DefaultField<'tcx>>> {
+        LocalTableInContextMut { hir_owner: self.hir_owner, data: &mut self.default_fields }
+    }
+
     pub fn is_coercion_cast(&self, hir_id: HirId) -> bool {
         validate_hir_id_for_typeck_results(self.hir_owner, hir_id);
         self.coercion_casts.contains(&hir_id.local_id)
@@ -788,4 +801,12 @@ impl<'tcx> std::fmt::Display for UserType<'tcx> {
             Self::TypeOf(arg0, arg1) => write!(f, "TypeOf({:?}, {:?})", arg0, arg1),
         }
     }
+}
+
+#[derive(Copy, Clone, Debug, PartialEq, TyEncodable, TyDecodable)]
+#[derive(Eq, Hash, HashStable, TypeFoldable, TypeVisitable)]
+pub struct DefaultField<'tcx> {
+    pub name: FieldIdx,
+    pub ty: Ty<'tcx>,
+    pub value: DefId,
 }

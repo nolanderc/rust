@@ -379,6 +379,7 @@ impl<'tcx> Cx<'tcx> {
                             fields: field_refs,
                             user_ty,
                             base: None,
+                            default: None,
                         }))
                     } else {
                         ExprKind::Call {
@@ -515,6 +516,20 @@ impl<'tcx> Cx<'tcx> {
                                     .copied()
                                     .collect(),
                             }),
+                            default: self.typeck_results().default_fields().get(expr.hir_id).map(
+                                |default_fields| {
+                                    default_fields
+                                        .into_iter()
+                                        .map(|&field| FieldDefault {
+                                            name: field.name,
+                                            value: mir::Const::Unevaluated(
+                                                mir::UnevaluatedConst { def: field.value, args, promoted: None },
+                                                field.ty,
+                                            ),
+                                        })
+                                        .collect()
+                                },
+                            ),
                         }))
                     }
                     AdtKind::Enum => {
@@ -536,6 +551,7 @@ impl<'tcx> Cx<'tcx> {
                                     user_ty,
                                     fields: self.field_refs(fields),
                                     base: None,
+                                    default: None,
                                 }))
                             }
                             _ => {
@@ -934,6 +950,7 @@ impl<'tcx> Cx<'tcx> {
                         user_ty,
                         fields: Box::new([]),
                         base: None,
+                        default: None,
                     })),
                     _ => bug!("unexpected ty: {:?}", ty),
                 }
