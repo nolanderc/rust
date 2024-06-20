@@ -1883,24 +1883,37 @@ impl<'a, 'tcx> FnCtxt<'a, 'tcx> {
             };
             self.typeck_results.borrow_mut().fru_field_types_mut().insert(expr.hir_id, fru_tys);
         } else if adt_kind != AdtKind::Union && !remaining_fields.is_empty() {
-            debug!(?remaining_fields);
-            let private_fields: Vec<&ty::FieldDef> = variant
-                .fields
-                .iter()
-                .filter(|field| !field.vis.is_accessible_from(tcx.parent_module(expr.hir_id), tcx))
-                .collect();
+            // Initialize fields with default values
+            for field in variant.fields.iter() {
+                if field.default.is_some() {
+                    let ident = field.ident(tcx).normalize_to_macros_2_0();
+                    remaining_fields.remove(&ident);
+                    // TODO(nolanderc): record which field indices need default initialization
+                }
+            }
 
-            if !private_fields.is_empty() {
-                self.report_private_fields(adt_ty, span, expr.span, private_fields, hir_fields);
-            } else {
-                self.report_missing_fields(
-                    adt_ty,
-                    span,
-                    remaining_fields,
-                    variant,
-                    hir_fields,
-                    args,
-                );
+            if !remaining_fields.is_empty() {
+                debug!(?remaining_fields);
+                let private_fields: Vec<&ty::FieldDef> = variant
+                    .fields
+                    .iter()
+                    .filter(|field| {
+                        !field.vis.is_accessible_from(tcx.parent_module(expr.hir_id), tcx)
+                    })
+                    .collect();
+
+                if !private_fields.is_empty() {
+                    self.report_private_fields(adt_ty, span, expr.span, private_fields, hir_fields);
+                } else {
+                    self.report_missing_fields(
+                        adt_ty,
+                        span,
+                        remaining_fields,
+                        variant,
+                        hir_fields,
+                        args,
+                    );
+                }
             }
         }
     }

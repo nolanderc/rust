@@ -1089,6 +1089,7 @@ fn lower_variant(
             did: f.def_id.to_def_id(),
             name: f.ident.name,
             vis: tcx.visibility(f.def_id),
+            default: f.default.map(|default| default.def_id.to_def_id()),
         })
         .collect();
     let recovered = matches!(def, hir::VariantData::Struct { recovered: Recovered::Yes(_), .. });

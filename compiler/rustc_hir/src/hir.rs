@@ -3083,6 +3083,7 @@ pub struct FieldDef<'hir> {
     pub hir_id: HirId,
     pub def_id: LocalDefId,
     pub ty: &'hir Ty<'hir>,
+    pub default: Option<&'hir AnonConst>,
 }
 
 impl FieldDef<'_> {

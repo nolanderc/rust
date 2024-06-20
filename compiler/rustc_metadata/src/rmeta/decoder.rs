@@ -1129,6 +1129,8 @@ impl<'a, 'tcx> CrateMetadataRef<'a> {
                         did,
                         name: self.item_name(did.index),
                         vis: self.get_visibility(did.index),
+                        // TODO(nolanderc): get field default value
+                        default: None,
                     })
                     .collect(),
                 adt_kind,

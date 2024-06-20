@@ -69,6 +69,9 @@ fn anon_const_type_of<'tcx>(tcx: TyCtxt<'tcx>, def_id: LocalDefId) -> Ty<'tcx> {
         Node::Variant(Variant { disr_expr: Some(ref e), .. }) if e.hir_id == hir_id => {
             return tcx.adt_def(tcx.hir().get_parent_item(hir_id)).repr().discr_type().to_ty(tcx);
         }
+        Node::Field(&FieldDef { def_id, .. }) => {
+            return tcx.type_of(def_id).instantiate_identity();
+        }
         Node::GenericParam(&GenericParam {
             def_id: param_def_id,
             kind: GenericParamKind::Const { default: Some(ct), .. },

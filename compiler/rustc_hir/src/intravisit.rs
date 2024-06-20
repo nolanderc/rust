@@ -1180,7 +1180,9 @@ pub fn walk_struct_def<'v, V: Visitor<'v>>(
 pub fn walk_field_def<'v, V: Visitor<'v>>(visitor: &mut V, field: &'v FieldDef<'v>) -> V::Result {
     try_visit!(visitor.visit_id(field.hir_id));
     try_visit!(visitor.visit_ident(field.ident));
-    visitor.visit_ty(field.ty)
+    try_visit!(visitor.visit_ty(field.ty));
+    visit_opt!(visitor, visit_anon_const, field.default);
+    V::Result::output()
 }
 
 pub fn walk_enum_def<'v, V: Visitor<'v>>(

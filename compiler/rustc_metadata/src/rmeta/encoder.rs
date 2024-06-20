@@ -1554,6 +1554,7 @@ impl<'a, 'tcx> EncodeContext<'a, 'tcx> {
             };
             record!(self.tables.variant_data[variant.def_id] <- data);
 
+            // TODO(nolanderc): encode field default values
             record_array!(self.tables.associated_item_or_field_def_ids[variant.def_id] <- variant.fields.iter().map(|f| {
                 assert!(f.did.is_local());
                 f.did.index

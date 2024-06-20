@@ -1802,6 +1802,7 @@ impl<'a> Parser<'a> {
                         ty,
                         attrs,
                         is_placeholder: false,
+                        default: None,
                     },
                     TrailingToken::MaybeComma,
                 ))
@@ -1975,12 +1976,7 @@ impl<'a> Parser<'a> {
         if self.token.kind == token::Colon && self.look_ahead(1, |tok| tok.kind != token::Colon) {
             self.dcx().emit_err(errors::SingleColonStructType { span: self.token.span });
         }
-        if self.token.kind == token::Eq {
-            self.bump();
-            let const_expr = self.parse_expr_anon_const()?;
-            let sp = ty.span.shrink_to_hi().to(const_expr.value.span);
-            self.dcx().emit_err(errors::EqualsStructDefault { span: sp });
-        }
+        let default = if self.eat(&token::Eq) { Some(self.parse_expr_anon_const()?) } else { None };
         Ok(FieldDef {
             span: lo.to(self.prev_token.span),
             ident: Some(name),
@@ -1988,6 +1984,7 @@ impl<'a> Parser<'a> {
             id: DUMMY_NODE_ID,
             ty,
             attrs,
+            default,
             is_placeholder: false,
         })
     }

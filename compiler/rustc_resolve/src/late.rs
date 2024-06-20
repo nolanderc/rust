@@ -1309,6 +1309,10 @@ impl<'a: 'ast, 'ast, 'tcx> Visitor<'ast> for LateResolutionVisitor<'a, '_, 'ast,
         self.resolve_doc_links(&f.attrs, MaybeExported::Ok(f.id));
         visit::walk_field_def(self, f)
     }
+
+    fn visit_field_def_default(&mut self, default: &'ast AnonConst) {
+        self.resolve_anon_const(default, AnonConstKind::EnumDiscriminant);
+    }
 }
 
 impl<'a: 'ast, 'b, 'ast, 'tcx> LateResolutionVisitor<'a, 'b, 'ast, 'tcx> {

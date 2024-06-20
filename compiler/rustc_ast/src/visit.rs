@@ -205,6 +205,9 @@ pub trait Visitor<'ast>: Sized {
     fn visit_field_def(&mut self, s: &'ast FieldDef) -> Self::Result {
         walk_field_def(self, s)
     }
+    fn visit_field_def_default(&mut self, default: &'ast AnonConst) -> Self::Result {
+        self.visit_anon_const(default)
+    }
     fn visit_enum_def(&mut self, enum_definition: &'ast EnumDef) -> Self::Result {
         walk_enum_def(self, enum_definition)
     }
@@ -879,6 +882,7 @@ pub fn walk_field_def<'a, V: Visitor<'a>>(visitor: &mut V, field: &'a FieldDef) 
     try_visit!(visitor.visit_vis(&field.vis));
     visit_opt!(visitor, visit_ident, field.ident);
     try_visit!(visitor.visit_ty(&field.ty));
+    visit_opt!(visitor, visit_field_def_default, &field.default);
     walk_list!(visitor, visit_attribute, &field.attrs);
     V::Result::output()
 }

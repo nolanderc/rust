@@ -755,6 +755,7 @@ impl<'hir> LoweringContext<'_, 'hir> {
         };
         let hir_id = self.lower_node_id(f.id);
         self.lower_attrs(hir_id, &f.attrs);
+        let default = f.default.as_ref().map(|default| self.lower_anon_const(default));
         hir::FieldDef {
             span: self.lower_span(f.span),
             hir_id,
@@ -766,6 +767,7 @@ impl<'hir> LoweringContext<'_, 'hir> {
             },
             vis_span: self.lower_span(f.vis.span),
             ty,
+            default,
         }
     }
 

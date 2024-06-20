@@ -475,6 +475,11 @@ impl<'a> State<'a> {
                 self.print_ident(field.ident.unwrap());
                 self.word_nbsp(":");
                 self.print_type(&field.ty);
+                if let Some(default) = &field.default {
+                    self.space();
+                    self.word_space("=");
+                    self.print_expr(&default.value, FixupContext::default());
+                }
                 self.word(",");
             }
         }

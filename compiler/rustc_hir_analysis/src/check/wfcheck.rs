@@ -1072,7 +1072,7 @@ fn check_type_defn<'tcx>(
     all_sized: bool,
 ) -> Result<(), ErrorGuaranteed> {
     let _ = tcx.representability(item.owner_id.def_id);
-    let adt_def = tcx.adt_def(item.owner_id);
+    let adt_def: ty::AdtDef<'tcx> = tcx.adt_def(item.owner_id);
 
     enter_wf_checking_ctxt(tcx, item.span, item.owner_id.def_id, |wfcx| {
         let variants = adt_def.variants();
@@ -1082,7 +1082,7 @@ fn check_type_defn<'tcx>(
             // All field types must be well-formed.
             for field in &variant.fields {
                 let field_id = field.did.expect_local();
-                let hir::FieldDef { ty: hir_ty, .. } =
+                let hir::FieldDef { ty: hir_ty, default: hir_default, .. } =
                     tcx.hir_node_by_def_id(field_id).expect_field();
                 let ty = wfcx.normalize(
                     hir_ty.span,
@@ -1093,7 +1093,27 @@ fn check_type_defn<'tcx>(
                     hir_ty.span,
                     Some(WellFormedLoc::Ty(field_id)),
                     ty.into(),
-                )
+                );
+
+                // Default values must be const-evaluateable
+                if let Some(default) = hir_default {
+                    let cause = traits::ObligationCause::new(
+                        tcx.def_span(default.def_id),
+                        wfcx.body_def_id,
+                        ObligationCauseCode::Misc,
+                    );
+                    wfcx.register_obligation(traits::Obligation::new(
+                        tcx,
+                        cause,
+                        wfcx.param_env,
+                        ty::Binder::dummy(ty::PredicateKind::Clause(
+                            ty::ClauseKind::ConstEvaluatable(ty::Const::from_anon_const(
+                                tcx,
+                                default.def_id,
+                            )),
+                        )),
+                    ));
+                }
             }
 
             // For DST, or when drop needs to copy things around, all
